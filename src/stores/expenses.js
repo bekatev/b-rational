@@ -40,6 +40,12 @@ export const useExpensesStore = defineStore('expenses', () => {
     }
   }
 
+  async function ensureSeeded() {
+    const uid = auth.user?.uid
+    if (!uid) return
+    await ensureDefaultCategories(uid)
+  }
+
   let seededOnce = false
   function startWatchers() {
     const uid = auth.user?.uid
@@ -158,6 +164,7 @@ export const useExpensesStore = defineStore('expenses', () => {
     removeCategory,
     addEntry,
     removeEntry,
+    ensureSeeded,
   }
 })
 

@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import { useExpensesStore } from '../stores/expenses'
 import { currencies, useUiStore } from '../stores/ui'
 import { useCurrency } from '../composables/useCurrency'
@@ -49,7 +49,17 @@ function convertedBreakdownFor(catId) {
 }
 
 const forms = {}
-for (const c of expenses.categories) forms[c.id] = { amount: 0, currencyCode: 'GEL' }
+// Ensure forms exist for categories loaded asynchronously (Firestore)
+watch(() => expenses.categories, (cats) => {
+  for (const c of cats) {
+    if (!forms[c.id]) forms[c.id] = { amount: 0, currencyCode: 'GEL' }
+  }
+}, { immediate: true })
+
+// Force-seed default categories on mount
+onMounted(() => {
+  expenses.ensureSeeded()
+})
 </script>
 
 <template>
