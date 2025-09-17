@@ -1,7 +1,9 @@
 import { defineStore } from 'pinia'
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, onUnmounted } from 'vue'
 import { useUiStore } from './ui'
 import { useAuthStore } from './auth'
+import { db } from '../firebase'
+import { collection, doc, setDoc, addDoc, deleteDoc, onSnapshot, query, where, serverTimestamp, getDocs } from 'firebase/firestore'
 
 function slugifyCategoryName(name) {
   return String(name || '')
@@ -10,17 +12,7 @@ function slugifyCategoryName(name) {
     .replace(/\s+/g, '-')
 }
 
-function generateEntryId() {
-  return `e_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
-}
-
-function storageKeysForUser(userId) {
-  const uid = userId || 'guest'
-  return {
-    categoriesKey: `expenses:categories:${uid}`,
-    entriesKey: `expenses:entries:${uid}`,
-  }
-}
+// Firestore-backed store now; IDs come from Firestore
 
 const DEFAULT_CATEGORIES = [
   { id: 'bank-payments', name: 'Bank Payments' },
@@ -34,48 +26,60 @@ export const useExpensesStore = defineStore('expenses', () => {
 
   const categories = ref([])
   const entries = ref([])
+  let stopCats = null
+  let stopEntries = null
 
-  function loadForUser(userId) {
-    const { categoriesKey, entriesKey } = storageKeysForUser(userId)
-    try {
-      const rawCats = localStorage.getItem(categoriesKey)
-      const parsedCats = rawCats ? JSON.parse(rawCats) : null
-      categories.value = Array.isArray(parsedCats) && parsedCats.length > 0 ? parsedCats : DEFAULT_CATEGORIES.slice()
-    } catch {
-      categories.value = DEFAULT_CATEGORIES.slice()
+  async function ensureDefaultCategories(uid) {
+    if (!uid) return
+    const col = collection(db, `users/${uid}/categories`)
+    const snap = await getDocs(col)
+    if (snap.empty) {
+      for (const c of DEFAULT_CATEGORIES) {
+        await setDoc(doc(db, `users/${uid}/categories/${c.id}`), { name: c.name })
+      }
     }
-
-    try {
-      const rawEntries = localStorage.getItem(entriesKey)
-      const parsedEntries = rawEntries ? JSON.parse(rawEntries) : null
-      entries.value = Array.isArray(parsedEntries) ? parsedEntries : []
-    } catch {
-      entries.value = []
-    }
-
-    // Ensure defaults are saved for new users
-    saveCategories()
-    saveEntries()
   }
 
-  function saveCategories() {
-    const { categoriesKey } = storageKeysForUser(auth.user?.uid)
-    localStorage.setItem(categoriesKey, JSON.stringify(categories.value))
-  }
-
-  function saveEntries() {
-    const { entriesKey } = storageKeysForUser(auth.user?.uid)
-    localStorage.setItem(entriesKey, JSON.stringify(entries.value))
+  function startWatchers() {
+    const uid = auth.user?.uid
+    if (!uid) { categories.value = []; entries.value = []; return }
+    // categories
+    const catsCol = collection(db, `users/${uid}/categories`)
+    stopCats = onSnapshot(catsCol, (snap) => {
+      categories.value = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+    })
+    // entries for selected month
+    const entriesCol = collection(db, `users/${uid}/expenses`)
+    const qEntries = query(entriesCol, where('month', '==', ui.selectedMonth))
+    stopEntries = onSnapshot(qEntries, (snap) => {
+      entries.value = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+    })
   }
 
   // React to user change and (re)load data
   watch(
     () => auth.user?.uid,
-    (uid) => {
-      loadForUser(uid)
+    async (uid) => {
+      if (stopCats) { stopCats(); stopCats = null }
+      if (stopEntries) { stopEntries(); stopEntries = null }
+      if (uid) await ensureDefaultCategories(uid)
+      startWatchers()
     },
     { immediate: true }
   )
+
+  watch(() => ui.selectedMonth, () => {
+    if (stopEntries) { stopEntries(); stopEntries = null }
+    const uid = auth.user?.uid
+    if (!uid) { entries.value = []; return }
+    const entriesCol = collection(db, `users/${uid}/expenses`)
+    const qEntries = query(entriesCol, where('month', '==', ui.selectedMonth))
+    stopEntries = onSnapshot(qEntries, (snap) => {
+      entries.value = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+    })
+  })
+
+  onUnmounted(() => { if (stopCats) stopCats(); if (stopEntries) stopEntries() })
 
   // Entries filtered by selected month
   const entriesForMonth = computed(() => {
@@ -105,38 +109,37 @@ export const useExpensesStore = defineStore('expenses', () => {
     return out
   })
 
-  function addCategory(name) {
+  async function addCategory(name) {
+    if (!auth.user?.uid) return
     const id = slugifyCategoryName(name)
     if (!id) return
-    if (categories.value.some(c => c.id === id)) return
-    categories.value = [...categories.value, { id, name: String(name || '').trim() || id }]
-    saveCategories()
+    await setDoc(doc(db, `users/${auth.user.uid}/categories/${id}`), { name: String(name || '').trim() || id })
   }
 
-  function removeCategory(categoryId) {
-    categories.value = categories.value.filter(c => c.id !== categoryId)
-    // Also remove entries that belonged to this category for cleanliness
-    const before = entries.value.length
-    entries.value = entries.value.filter(e => e.categoryId !== categoryId)
-    if (before !== entries.value.length) saveEntries()
-    saveCategories()
+  async function removeCategory(categoryId) {
+    if (!auth.user?.uid) return
+    // Remove category doc; entries cleanup is optional here (can be handled by UI)
+    await deleteDoc(doc(db, `users/${auth.user.uid}/categories/${categoryId}`))
   }
 
-  function addEntry({ categoryId, amount, currencyCode }) {
+  async function addEntry({ categoryId, amount, currencyCode }) {
+    if (!auth.user?.uid) return
     if (!categoryId || !categories.value.some(c => c.id === categoryId)) return
     const amt = Number(amount || 0)
     if (!Number.isFinite(amt) || amt <= 0) return
     const code = String(currencyCode || 'GEL').toUpperCase()
-    entries.value = [
-      ...entries.value,
-      { id: generateEntryId(), categoryId, amount: amt, currencyCode: code, month: ui.selectedMonth },
-    ]
-    saveEntries()
+    await addDoc(collection(db, `users/${auth.user.uid}/expenses`), {
+      categoryId,
+      amount: amt,
+      currencyCode: code,
+      month: ui.selectedMonth,
+      createdAt: serverTimestamp(),
+    })
   }
 
-  function removeEntry(entryId) {
-    entries.value = entries.value.filter(e => e.id !== entryId)
-    saveEntries()
+  async function removeEntry(entryId) {
+    if (!auth.user?.uid) return
+    await deleteDoc(doc(db, `users/${auth.user.uid}/expenses/${entryId}`))
   }
 
   return {
