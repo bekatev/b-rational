@@ -40,12 +40,18 @@ export const useExpensesStore = defineStore('expenses', () => {
     }
   }
 
+  let seededOnce = false
   function startWatchers() {
     const uid = auth.user?.uid
     if (!uid) { categories.value = []; entries.value = []; return }
     // categories
     const catsCol = collection(db, `users/${uid}/categories`)
-    stopCats = onSnapshot(catsCol, (snap) => {
+    stopCats = onSnapshot(catsCol, async (snap) => {
+      if (snap.empty && !seededOnce) {
+        seededOnce = true
+        await ensureDefaultCategories(uid)
+        return
+      }
       categories.value = snap.docs.map(d => ({ id: d.id, ...d.data() }))
     })
     // entries for selected month
