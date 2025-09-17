@@ -10,7 +10,7 @@ const Login = () => import('../views/Login.vue')
 const Register = () => import('../views/Register.vue')
 
 const router = createRouter({
-  history: createWebHistory(),
+  history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     { path: '/login', name: 'Login', component: Login, meta: { guestOnly: true } },
     { path: '/register', name: 'Register', component: Register, meta: { guestOnly: true } },
