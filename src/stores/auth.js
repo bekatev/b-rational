@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { auth } from '../firebase'
+import { setPersistence, browserLocalPersistence } from 'firebase/auth'
 import { useExpensesStore } from './expenses'
 import { onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from 'firebase/auth'
 
@@ -27,6 +28,7 @@ export const useAuthStore = defineStore('auth', () => {
     status.value = 'loading'
     error.value = ''
     try {
+      await setPersistence(auth, browserLocalPersistence)
       const cred = await signInWithEmailAndPassword(auth, email, password)
       user.value = { uid: cred.user.uid, email: cred.user.email }
       try {

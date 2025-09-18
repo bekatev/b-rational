@@ -15,9 +15,8 @@ function slugifyCategoryName(name) {
 // Firestore-backed store now; IDs come from Firestore
 
 const DEFAULT_CATEGORIES = [
-  { id: 'bank-payments', name: 'Bank Payments' },
-  { id: 'food', name: 'Food' },
-  { id: 'unexpected-expenses', name: 'Unexpected expenses' },
+  { id: 'groceries', name: 'Groceries' },
+  { id: 'shopping', name: 'Shopping' },
 ]
 
 export const useExpensesStore = defineStore('expenses', () => {
@@ -146,7 +145,7 @@ export const useExpensesStore = defineStore('expenses', () => {
     await deleteDoc(doc(db, `users/${auth.user.uid}/categories/${categoryId}`))
   }
 
-  async function addEntry({ categoryId, amount, currencyCode }) {
+  async function addEntry({ categoryId, name, amount, currencyCode }) {
     if (!auth.user?.uid) throw new Error('Please sign in to add expenses')
     if (!categoryId) throw new Error('Missing category')
     const amt = Number(amount || 0)
@@ -154,6 +153,7 @@ export const useExpensesStore = defineStore('expenses', () => {
     const code = String(currencyCode || 'GEL').toUpperCase()
     const payload = {
       categoryId,
+      name: String(name || '').trim(),
       amount: amt,
       currencyCode: code,
       month: ui.selectedMonth,

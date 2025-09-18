@@ -12,8 +12,8 @@ const newCategory = ref('')
 
 async function addEntryFor(categoryId) {
   try {
-    await expenses.addEntry({ categoryId, amount: Number(forms[categoryId].amount || 0), currencyCode: forms[categoryId].currencyCode || 'GEL' })
-    forms[categoryId] = { amount: 0, currencyCode: 'GEL' }
+    await expenses.addEntry({ categoryId, name: forms[categoryId].name, amount: Number(forms[categoryId].amount || 0), currencyCode: forms[categoryId].currencyCode || 'GEL' })
+    forms[categoryId] = { name: '', amount: 0, currencyCode: 'GEL' }
   } catch (e) {
     alert(e?.message || 'Failed to add expense')
     console.error(e)
@@ -57,7 +57,7 @@ const forms = {}
 // Ensure forms exist for categories loaded asynchronously (Firestore)
 watch(() => expenses.categories, (cats) => {
   for (const c of cats) {
-    if (!forms[c.id]) forms[c.id] = { amount: 0, currencyCode: 'GEL' }
+    if (!forms[c.id]) forms[c.id] = { name: '', amount: 0, currencyCode: 'GEL' }
   }
 }, { immediate: true })
 
@@ -87,18 +87,20 @@ onMounted(() => {
         </div>
 
         <div class="p-4 space-y-3">
-          <div class="grid grid-cols-3 gap-2 items-end">
+          <div class="grid grid-cols-4 gap-2 items-end">
+            <input v-model="forms[c.id].name" :id="`name-${c.id}`" name="name" type="text" placeholder="Name" class="px-3 py-2 rounded-xl bg-black/5 dark:bg-white/10" />
             <input v-model.number="forms[c.id].amount" :id="`amount-${c.id}`" name="amount" type="number" min="0" step="0.01" placeholder="Amount" class="px-3 py-2 rounded-xl bg-black/5 dark:bg-white/10" />
             <select v-model="forms[c.id].currencyCode" :id="`currency-${c.id}`" name="currency" class="px-3 py-2 rounded-xl bg-black/5 dark:bg-white/10">
               <option v-for="cur in currencies" :key="cur.code" :value="cur.code">{{ cur.code }}</option>
             </select>
-            <button class="button-primary" @click="addEntryFor(c.id)">Add</button>
+            <button class="button-primary hover:opacity-90" @click="addEntryFor(c.id)">Add</button>
           </div>
 
           <div class="card-glass p-0 overflow-hidden">
             <table class="w-full text-left">
               <thead class="bg-black/5 dark:bg:white/10">
                 <tr>
+                  <th class="px-4 py-3">Name</th>
                   <th class="px-4 py-3">Amount</th>
                   <th class="px-4 py-3">Currency</th>
                   <th class="px-4 py-3"></th>
@@ -106,6 +108,7 @@ onMounted(() => {
               </thead>
               <tbody>
                 <tr v-for="e in expenses.entriesForMonth.filter(e => e.categoryId === c.id)" :key="e.id" class="border-t border-black/5 dark:border-white/10">
+                  <td class="px-4 py-3">{{ e.name || '-' }}</td>
                   <td class="px-4 py-3 font-medium">{{ formatRaw(e.amount, e.currencyCode) }}</td>
                   <td class="px-4 py-3">{{ e.currencyCode }}</td>
                   <td class="px-4 py-3 text-right">
@@ -113,7 +116,7 @@ onMounted(() => {
                   </td>
                 </tr>
                 <tr v-if="expenses.entriesForMonth.filter(e => e.categoryId === c.id).length === 0">
-                  <td colspan="3" class="px-4 py-6 text-center text-neutral-500">No entries</td>
+                  <td colspan="4" class="px-4 py-6 text-center text-neutral-500">No entries</td>
                 </tr>
               </tbody>
             </table>
