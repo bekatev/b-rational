@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { auth } from '../firebase'
+import { useExpensesStore } from './expenses'
 import { onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from 'firebase/auth'
 
 export const useAuthStore = defineStore('auth', () => {
@@ -8,8 +9,18 @@ export const useAuthStore = defineStore('auth', () => {
   const status = ref('idle')
   const error = ref('')
 
-  onAuthStateChanged(auth, (u) => {
+  onAuthStateChanged(auth, async (u) => {
     user.value = u ? { uid: u.uid, email: u.email } : null
+    if (u) {
+      try {
+        // Ensure default expense categories exist for this user
+        const expenses = useExpensesStore()
+        await expenses.ensureSeeded()
+      } catch (e) {
+        // Non-fatal; UI can still work and show errors if needed
+        console.error('Failed to seed expense categories on login', e)
+      }
+    }
   })
 
   async function login(email, password) {
@@ -18,6 +29,10 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       const cred = await signInWithEmailAndPassword(auth, email, password)
       user.value = { uid: cred.user.uid, email: cred.user.email }
+      try {
+        const expenses = useExpensesStore()
+        await expenses.ensureSeeded()
+      } catch {}
       status.value = 'success'
     } catch (e) {
       error.value = e.message || 'Login failed'
@@ -32,6 +47,10 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       const cred = await createUserWithEmailAndPassword(auth, email, password)
       user.value = { uid: cred.user.uid, email: cred.user.email }
+      try {
+        const expenses = useExpensesStore()
+        await expenses.ensureSeeded()
+      } catch {}
       status.value = 'success'
     } catch (e) {
       error.value = e.message || 'Sign up failed'
