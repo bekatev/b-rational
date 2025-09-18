@@ -76,9 +76,9 @@ onMounted(() => {
 
     <div class="text-sm text-neutral-500">Month: {{ ui.selectedMonth }}</div>
 
-    <div class="grid md:grid-cols-3 gap-6">
-      <div v-for="c in expenses.categories" :key="c.id" class="card-glass p-0 overflow-hidden">
-        <div class="px-4 py-3 flex items-center justify-between bg-black/5 dark:bg-white/10">
+      <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        <div v-for="c in expenses.categories" :key="c.id" class="card-glass p-0 overflow-hidden">
+          <div class="card-header">
           <div class="font-medium">{{ c.name }}</div>
           <div class="flex items-center gap-2">
             <span class="text-sm text-neutral-500">{{ ui.globalCurrency.code }}: {{ format(totalForCategoryGlobal(c.id), ui.globalCurrency.code) }}</span>
@@ -86,43 +86,43 @@ onMounted(() => {
           </div>
         </div>
 
-        <div class="p-4 space-y-3">
-          <div class="grid grid-cols-1 sm:grid-cols-4 gap-2 items-end">
-            <input v-model="forms[c.id].name" :id="`name-${c.id}`" name="name" type="text" placeholder="Name" class="px-3 py-2 rounded-xl bg-black/5 dark:bg-white/10" />
-            <input v-model.number="forms[c.id].amount" :id="`amount-${c.id}`" name="amount" type="number" min="0" step="0.01" placeholder="Amount" class="px-3 py-2 rounded-xl bg-black/5 dark:bg-white/10" />
-            <select v-model="forms[c.id].currencyCode" :id="`currency-${c.id}`" name="currency" class="px-3 py-2 rounded-xl bg-black/5 dark:bg-white/10">
+          <div class="card-body">
+            <div class="grid grid-cols-1 sm:grid-cols-4 gap-2 items-end">
+              <input v-model="forms[c.id].name" :id="`name-${c.id}`" name="name" type="text" placeholder="Name" class="input-base" />
+              <input v-model.number="forms[c.id].amount" :id="`amount-${c.id}`" name="amount" type="number" min="0" step="0.01" placeholder="Amount" class="input-base" />
+              <select v-model="forms[c.id].currencyCode" :id="`currency-${c.id}`" name="currency" class="input-base">
               <option v-for="cur in currencies" :key="cur.code" :value="cur.code">{{ cur.code }}</option>
             </select>
             <button class="button-primary hover:opacity-90" @click="addEntryFor(c.id)">Add</button>
           </div>
 
-          <div class="card-glass p-0 overflow-x-auto">
-            <table class="w-full text-left">
-              <thead class="bg-black/5 dark:bg:white/10">
+            <div class="card-glass p-0 overflow-x-auto">
+              <table class="w-full text-left table-styled">
+                <thead>
                 <tr>
-                  <th class="px-4 py-3">Name</th>
-                  <th class="px-4 py-3">Amount</th>
-                  <th class="px-4 py-3">Currency</th>
-                  <th class="px-4 py-3"></th>
+                    <th>Name</th>
+                    <th>Amount</th>
+                    <th>Currency</th>
+                    <th></th>
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="e in expenses.entriesForMonth.filter(e => e.categoryId === c.id)" :key="e.id" class="border-t border-black/5 dark:border-white/10">
-                  <td class="px-4 py-3">{{ e.name || '-' }}</td>
-                  <td class="px-4 py-3 font-medium">{{ formatRaw(e.amount, e.currencyCode) }}</td>
-                  <td class="px-4 py-3">{{ e.currencyCode }}</td>
-                  <td class="px-4 py-3 text-right">
-                    <button class="px-3 py-1 rounded-lg hover:bg-black/5 dark:hover:bg:white/10" @click="expenses.removeEntry(e.id)">Remove</button>
+                  <tr v-for="e in expenses.entriesForMonth.filter(e => e.categoryId === c.id)" :key="e.id">
+                    <td>{{ e.name || '-' }}</td>
+                    <td class="font-medium">{{ formatRaw(e.amount, e.currencyCode) }}</td>
+                    <td>{{ e.currencyCode }}</td>
+                    <td class="text-right">
+                      <button class="px-3 py-1 rounded-lg hover:bg-black/5 dark:hover:bg-white/10" @click="expenses.removeEntry(e.id)">Remove</button>
                   </td>
                 </tr>
                 <tr v-if="expenses.entriesForMonth.filter(e => e.categoryId === c.id).length === 0">
-                  <td colspan="4" class="px-4 py-6 text-center text-neutral-500">No entries</td>
+                    <td colspan="4" class="px-4 py-6 text-center text-neutral-500">No entries</td>
                 </tr>
               </tbody>
             </table>
           </div>
 
-          <div class="text-right text-sm text-neutral-500 flex flex-col gap-1 items-end">
+            <div class="text-right text-sm text-neutral-500 flex flex-col gap-1 items-end">
             <div class="flex flex-wrap gap-2 justify-end">
               <template v-for="(total, code) in expenses.totalsByCategoryCurrency[c.id] || {}" :key="code">
                 <span class="px-2 py-1 rounded-lg bg-black/5 dark:bg:white/10">{{ code }}: {{ total.toFixed(2) }}</span>

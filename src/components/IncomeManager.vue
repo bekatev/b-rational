@@ -43,10 +43,10 @@ function totalAllGlobal() {
 <template>
   <div class="space-y-6">
     <div class="grid grid-cols-1 sm:grid-cols-5 gap-3 items-end">
-      <input v-model="form.name" placeholder="Source name" class="px-3 py-2 rounded-xl bg-black/5 dark:bg-white/10" />
-      <input v-model="form.category" placeholder="Category (optional)" class="px-3 py-2 rounded-xl bg-black/5 dark:bg-white/10" />
-      <input v-model.number="form.amount" type="number" min="0" step="0.01" placeholder="Amount" class="px-3 py-2 rounded-xl bg-black/5 dark:bg-white/10" />
-      <select v-model="form.currencyCode" class="px-3 py-2 rounded-xl bg-black/5 dark:bg-white/10">
+      <input v-model="form.name" placeholder="Source name" class="input-base" />
+      <input v-model="form.category" placeholder="Category (optional)" class="input-base" />
+      <input v-model.number="form.amount" type="number" min="0" step="0.01" placeholder="Amount" class="input-base" />
+      <select v-model="form.currencyCode" class="input-base">
         <option v-for="cur in currencies" :key="cur.code" :value="cur.code">{{ cur.code }}</option>
       </select>
       <button class="button-primary disabled:opacity-50 disabled:cursor-not-allowed" :disabled="!canAdd" @click="add">Add Source</button>
@@ -58,21 +58,21 @@ function totalAllGlobal() {
     <div class="text-sm text-neutral-500">Month: {{ ui.selectedMonth }}</div>
 
     <div class="card-glass p-0 overflow-x-auto">
-      <table class="w-full text-left">
-        <thead class="bg-black/5 dark:bg-white/10">
+      <table class="w-full text-left table-styled">
+        <thead>
           <tr>
-            <th class="px-4 py-3">Name</th>
-            <th class="px-4 py-3">Amount</th>
-            <th class="px-4 py-3">Currency</th>
-            <th class="px-4 py-3"></th>
+            <th>Name</th>
+            <th>Amount</th>
+            <th>Currency</th>
+            <th></th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="s in income.sourcesForMonth" :key="s.id" class="border-t border-black/5 dark:border-white/10">
-            <td class="px-4 py-3">{{ s.name }}</td>
-            <td class="px-4 py-3 font-medium">{{ formatRaw(s.amount, s.currencyCode) }}</td>
-            <td class="px-4 py-3">{{ s.currencyCode }}</td>
-            <td class="px-4 py-3 text-right">
+          <tr v-for="s in income.sourcesForMonth" :key="s.id">
+            <td>{{ s.name }}</td>
+            <td class="font-medium">{{ formatRaw(s.amount, s.currencyCode) }}</td>
+            <td>{{ s.currencyCode }}</td>
+            <td class="text-right">
               <button class="px-3 py-1 rounded-lg hover:bg-black/5 dark:hover:bg-white/10" @click="income.removeSource(s.id)">Remove</button>
             </td>
           </tr>
