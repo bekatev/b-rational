@@ -10,9 +10,14 @@ const { format, formatRaw } = useCurrency()
 
 const newCategory = ref('')
 
-function addEntryFor(categoryId) {
-  expenses.addEntry({ categoryId, amount: Number(forms[categoryId].amount || 0), currencyCode: forms[categoryId].currencyCode || 'GEL' })
-  forms[categoryId] = { amount: 0, currencyCode: 'GEL' }
+async function addEntryFor(categoryId) {
+  try {
+    await expenses.addEntry({ categoryId, amount: Number(forms[categoryId].amount || 0), currencyCode: forms[categoryId].currencyCode || 'GEL' })
+    forms[categoryId] = { amount: 0, currencyCode: 'GEL' }
+  } catch (e) {
+    alert(e?.message || 'Failed to add expense')
+    console.error(e)
+  }
 }
 
 function totalForCategoryGlobal(categoryId) {
@@ -65,7 +70,7 @@ onMounted(() => {
 <template>
   <div class="space-y-6">
     <div class="flex gap-2">
-      <input v-model="newCategory" placeholder="Add category" class="px-3 py-2 rounded-xl bg-black/5 dark:bg-white/10" @keyup.enter="() => { if (newCategory) { expenses.addCategory(newCategory); forms[newCategory.trim().toLowerCase().replace(/\s+/g,'-')] = { amount: 0, currencyCode: 'GEL' }; newCategory='' } }" />
+      <input v-model="newCategory" id="new-category" name="newCategory" placeholder="Add category" class="px-3 py-2 rounded-xl bg-black/5 dark:bg-white/10" @keyup.enter="() => { if (newCategory) { expenses.addCategory(newCategory); forms[newCategory.trim().toLowerCase().replace(/\s+/g,'-')] = { amount: 0, currencyCode: 'GEL' }; newCategory='' } }" />
       <button class="button-primary" @click="() => { if (newCategory) { expenses.addCategory(newCategory); forms[newCategory.trim().toLowerCase().replace(/\s+/g,'-')] = { amount: 0, currencyCode: 'GEL' }; newCategory='' } }">Add</button>
     </div>
 
@@ -83,8 +88,8 @@ onMounted(() => {
 
         <div class="p-4 space-y-3">
           <div class="grid grid-cols-3 gap-2 items-end">
-            <input v-model.number="forms[c.id].amount" type="number" min="0" step="0.01" placeholder="Amount" class="px-3 py-2 rounded-xl bg-black/5 dark:bg-white/10" />
-            <select v-model="forms[c.id].currencyCode" class="px-3 py-2 rounded-xl bg-black/5 dark:bg-white/10">
+            <input v-model.number="forms[c.id].amount" :id="`amount-${c.id}`" name="amount" type="number" min="0" step="0.01" placeholder="Amount" class="px-3 py-2 rounded-xl bg-black/5 dark:bg-white/10" />
+            <select v-model="forms[c.id].currencyCode" :id="`currency-${c.id}`" name="currency" class="px-3 py-2 rounded-xl bg-black/5 dark:bg-white/10">
               <option v-for="cur in currencies" :key="cur.code" :value="cur.code">{{ cur.code }}</option>
             </select>
             <button class="button-primary" @click="addEntryFor(c.id)">Add</button>
