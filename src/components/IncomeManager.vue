@@ -42,7 +42,7 @@ function totalAllGlobal() {
 
 <template>
   <div class="space-y-6">
-    <div class="grid md:grid-cols-5 gap-3 items-end">
+    <div class="grid grid-cols-1 sm:grid-cols-5 gap-3 items-end">
       <input v-model="form.name" placeholder="Source name" class="px-3 py-2 rounded-xl bg-black/5 dark:bg-white/10" />
       <input v-model="form.category" placeholder="Category (optional)" class="px-3 py-2 rounded-xl bg-black/5 dark:bg-white/10" />
       <input v-model.number="form.amount" type="number" min="0" step="0.01" placeholder="Amount" class="px-3 py-2 rounded-xl bg-black/5 dark:bg-white/10" />
@@ -57,7 +57,7 @@ function totalAllGlobal() {
 
     <div class="text-sm text-neutral-500">Month: {{ ui.selectedMonth }}</div>
 
-    <div class="card-glass p-0 overflow-hidden">
+    <div class="card-glass p-0 overflow-x-auto">
       <table class="w-full text-left">
         <thead class="bg-black/5 dark:bg-white/10">
           <tr>

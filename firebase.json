@@ -1,5 +1,6 @@
 {
   "hosting": {
+    "site": "b-rational",
     "public": "dist",
     "ignore": [
       "firebase.json",

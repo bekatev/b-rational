@@ -87,7 +87,7 @@ onMounted(() => {
         </div>
 
         <div class="p-4 space-y-3">
-          <div class="grid grid-cols-4 gap-2 items-end">
+          <div class="grid grid-cols-1 sm:grid-cols-4 gap-2 items-end">
             <input v-model="forms[c.id].name" :id="`name-${c.id}`" name="name" type="text" placeholder="Name" class="px-3 py-2 rounded-xl bg-black/5 dark:bg-white/10" />
             <input v-model.number="forms[c.id].amount" :id="`amount-${c.id}`" name="amount" type="number" min="0" step="0.01" placeholder="Amount" class="px-3 py-2 rounded-xl bg-black/5 dark:bg-white/10" />
             <select v-model="forms[c.id].currencyCode" :id="`currency-${c.id}`" name="currency" class="px-3 py-2 rounded-xl bg-black/5 dark:bg-white/10">
@@ -96,7 +96,7 @@ onMounted(() => {
             <button class="button-primary hover:opacity-90" @click="addEntryFor(c.id)">Add</button>
           </div>
 
-          <div class="card-glass p-0 overflow-hidden">
+          <div class="card-glass p-0 overflow-x-auto">
             <table class="w-full text-left">
               <thead class="bg-black/5 dark:bg:white/10">
                 <tr>

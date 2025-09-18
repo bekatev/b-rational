@@ -24,8 +24,10 @@ jobs:
 
       - name: Deploy to Firebase Hosting
         env:
-          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/gcp-key.json
           FIREBASE_PROJECT_ID: b-rational
-        run: npx --yes firebase-tools@latest deploy --only hosting --project "$FIREBASE_PROJECT_ID"
+        run: |
+          echo "${{ secrets.GCP_SA_KEY_JSON }}" > "$GOOGLE_APPLICATION_CREDENTIALS"
+          npx --yes firebase-tools@latest deploy --only hosting --project "$FIREBASE_PROJECT_ID"
 
 
